@@ -1,5 +1,4 @@
 <?php
-require "db.php";
-
+session_start();
 session_destroy();
-json(["ok"=>true,"message"=>"Logged out"]);
+echo json_encode(["ok"=>true,"message"=>"Logged out"]);

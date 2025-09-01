@@ -55,7 +55,7 @@ async function apiCall(endpoint, data) {
     });
 
     const jsonRes = await res.json();
-    console.log(`📡 [${endpoint}] response:`, jsonRes); // Debug log
+    console.log(`📡 [${endpoint}] response:`, jsonRes);
     return jsonRes;
   } catch (err) {
     console.error(`❌ [${endpoint}] API error`, err);
@@ -78,9 +78,11 @@ btnSignup?.addEventListener("click", async (e) => {
 
   const res = await apiCall("signup", { name, email, password });
   if (res.ok) {
-    alert("Signup successful! You can now log in.");
+    localStorage.setItem("user", JSON.stringify(res.user));
+    profileBadge.textContent = res.user.name;
+    if (res.user.role === "admin") adminLink.style.display = "inline-block";
     closeModal(signupModal);
-    openModal(loginModal);
+    location.reload();
   } else {
     alert("Signup failed: " + res.error);
   }
@@ -100,9 +102,14 @@ btnLogin?.addEventListener("click", async (e) => {
 
   const res = await apiCall("login", { email, password });
   if (res.ok) {
+    localStorage.setItem("user", JSON.stringify(res.user));
     profileBadge.textContent = res.user.name;
     if (res.user.role === "admin") adminLink.style.display = "inline-block";
     closeModal(loginModal);
+
+    document.querySelector("#btnShowLogin").style.display = "none";
+    document.querySelector("#btnShowSignup").style.display = "none";
+    location.reload();
   } else {
     alert("Login failed: " + res.error);
   }
@@ -113,18 +120,31 @@ profileBadge?.addEventListener("click", async () => {
   if (profileBadge.textContent === "Guest") return;
   const res = await apiCall("logout", {});
   if (res.ok) {
+    localStorage.removeItem("user");
     profileBadge.textContent = "Guest";
     adminLink.style.display = "none";
     alert("Logged out!");
+    location.reload();
   }
 });
 
 // ========== Auto check session ==========
 async function checkSession() {
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  if (savedUser) {
+    profileBadge.textContent = savedUser.name;
+    if (savedUser.role === "admin") adminLink.style.display = "inline-block";
+    document.querySelector("#btnShowLogin").style.display = "none";
+    document.querySelector("#btnShowSignup").style.display = "none";
+    return;
+  }
+
   const res = await apiCall("whoami", {});
   if (res.ok && res.user) {
     profileBadge.textContent = res.user.name;
     if (res.user.role === "admin") adminLink.style.display = "inline-block";
+    document.querySelector("#btnShowLogin").style.display = "none";
+    document.querySelector("#btnShowSignup").style.display = "none";
   }
 }
 checkSession();

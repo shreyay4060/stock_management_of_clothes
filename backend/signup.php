@@ -16,8 +16,8 @@ if (!$name || !$email || !$password) {
     json(["ok"=>false,"error"=>"All fields are required", "debug"=>$data]);
 }
 
-// Check if email already exists
 try {
+    // Check if email already exists
     $stmt = $pdo->prepare("SELECT id FROM users WHERE email=?");
     $stmt->execute([$email]);
     if ($stmt->fetch()) {
@@ -28,9 +28,27 @@ try {
     $hash = password_hash($password, PASSWORD_DEFAULT);
 
     // Insert new user
-    $stmt = $pdo->prepare("INSERT INTO users (name,email,password) VALUES (?,?,?)");
-    if ($stmt->execute([$name, $email, $hash])) {
-        json(["ok"=>true, "message"=>"Signup successful"]);
+    $stmt = $pdo->prepare("INSERT INTO users (name,email,password,role) VALUES (?,?,?,?)");
+    $role = "retailer"; // default role
+    if ($stmt->execute([$name, $email, $hash, $role])) {
+        $id = $pdo->lastInsertId();
+
+        // also set session
+        $_SESSION['user_id'] = $id;
+        $_SESSION['name']    = $name;
+        $_SESSION['email']   = $email;
+        $_SESSION['role']    = $role;
+
+        json([
+            "ok"=>true,
+            "message"=>"Signup successful",
+            "user"=>[
+                "id"=>$id,
+                "name"=>$name,
+                "email"=>$email,
+                "role"=>$role
+            ]
+        ]);
     } else {
         json(["ok"=>false,"error"=>"Signup failed"]);
     }

@@ -13,7 +13,7 @@ $email = trim($data['email'] ?? '');
 $password = $data['password'] ?? '';
 
 if (!$name || !$email || !$password) {
-    json(["ok"=>false,"error"=>"All fields are required", "debug"=>$data]);
+    json(["ok"=>false,"error"=>"All fields are required"]);
 }
 
 try {
@@ -28,9 +28,11 @@ try {
     $hash = password_hash($password, PASSWORD_DEFAULT);
 
     // Insert new user
-    $stmt = $pdo->prepare("INSERT INTO users (name,email,password,role) VALUES (?,?,?,?)");
     $role = "retailer"; // default role
-    if ($stmt->execute([$name, $email, $hash, $role])) {
+    $stmt = $pdo->prepare("INSERT INTO users (name,email,password,role) VALUES (?,?,?,?)");
+    $ok = $stmt->execute([$name, $email, $hash, $role]);
+
+    if ($ok && $stmt->rowCount() > 0) {
         $id = $pdo->lastInsertId();
 
         // also set session
@@ -40,17 +42,17 @@ try {
         $_SESSION['role']    = $role;
 
         json([
-            "ok"=>true,
-            "message"=>"Signup successful",
-            "user"=>[
-                "id"=>$id,
-                "name"=>$name,
-                "email"=>$email,
-                "role"=>$role
+            "ok" => true,
+            "message" => "Signup successful",
+            "user" => [
+                "id"    => $id,
+                "name"  => $name,
+                "email" => $email,
+                "role"  => $role
             ]
         ]);
     } else {
-        json(["ok"=>false,"error"=>"Signup failed"]);
+        json(["ok"=>false,"error"=>"Insert failed"]);
     }
 } catch (Exception $e) {
     json(["ok"=>false,"error"=>"Signup failed: ".$e->getMessage()]);

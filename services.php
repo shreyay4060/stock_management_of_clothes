@@ -21,6 +21,6 @@
 </section>
 
 <?php include "footer.php"; ?>
-<script src="js/app.js"></script>
+<!-- <script src="js/app.js"></script> -->
 </body>
 </html>

@@ -19,7 +19,9 @@ $role = $_SESSION['role'] ?? null;
   <div class="nav-actions">
     <a class="btn-outline" href="cart.php">🛒 Cart</a>
     <?php if ($user): ?>
-      <span class="badge"><?= htmlspecialchars($user) ?></span>
+      <span class="badge">
+        <?= htmlspecialchars(explode(" ", $user)[0]) ?> (<?= htmlspecialchars($role) ?>)
+      </span>
       <a href="logout.php" class="btn-primary">Logout</a>
     <?php else: ?>
       <button id="btnShowLogin" class="btn-primary">Login</button>
@@ -58,23 +60,3 @@ $role = $_SESSION['role'] ?? null;
     </form>
   </div>
 </div>
-
-
-<script>
-  // Modal controls
-  const loginBtn = document.getElementById("btnShowLogin");
-  const signupBtn = document.getElementById("btnShowSignup");
-  const loginModal = document.getElementById("loginModal");
-  const signupModal = document.getElementById("signupModal");
-
-  if (loginBtn) loginBtn.onclick = ()=> loginModal.style.display="block";
-  if (signupBtn) signupBtn.onclick = ()=> signupModal.style.display="block";
-
-  document.querySelectorAll(".close").forEach(btn=>{
-    btn.onclick = ()=> document.getElementById(btn.dataset.close).style.display="none";
-  });
-
-  window.onclick = (e)=>{
-    if(e.target.classList.contains("modal")) e.target.style.display="none";
-  };
-</script>

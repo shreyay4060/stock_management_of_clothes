@@ -29,7 +29,6 @@
 </section>
 
 <?php include "footer.php"; ?>
-<script src="js/app.js"></script>
 <script>
 (async function(){
   const who = await (await fetch('backend/whoami.php')).json();

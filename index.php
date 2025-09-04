@@ -144,7 +144,7 @@
 
   <?php include "footer.php"; ?>
 
-  <script src="js/app.js"></script>
+  <!-- <script src="js/app.js"></script> -->
   <script>
     // Fade-in animations
     const observers = document.querySelectorAll('.fade-in, .slide-fade');

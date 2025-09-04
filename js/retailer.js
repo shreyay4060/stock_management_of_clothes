@@ -23,7 +23,9 @@ async function loadClothes() {
         const card = document.createElement("div");
         card.className = "card lift";
         card.innerHTML = `
-          <img src="${c.image || 'images/placeholder.png'}" alt="${c.name}" class="card-img">
+          <img src="${c.image || 'images/arrival3.jpg'}" alt="${c.name}" 
+               class="card-img" 
+               style="width:100%;height:200px;object-fit:cover;border-radius:6px;">
           <h3>${c.name}</h3>
           <p class="muted">${c.brand || ""} ${c.size || ""} ${c.color || ""}</p>
           <p><b>₹${c.price}</b> | Qty: ${c.quantity}</p>

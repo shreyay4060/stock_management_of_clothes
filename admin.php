@@ -9,8 +9,8 @@
 <body>
 <?php include "header.php"; ?>
 
-<main class="container">
-  <h1 class="section-title">Admin Dashboard</h1>
+<main class="container admn-dashboard">
+  <h1 class="section-title ">Admin Dashboard</h1>
   <p id="adminMsg" class="msg"></p>
 
   <!-- Add Cloth Form -->

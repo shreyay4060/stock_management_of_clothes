@@ -77,7 +77,7 @@
       <p class="subtitle fade-in">Powerful stock management for clothes — variants, alerts, supplier tracking, retailer catalogue, and smooth checkout.</p>
       <div class="hero-cta">
         <a class="btn-primary" href="retailer.php">View Stock</a>
-        <a class="btn-ghost" href="admin.php">Go to Admin</a>
+        <a class="btn-ghost" href="#">Go to Admin</a>
       </div>
       <div class="stats-row fade-in">
         <div class="stat"><div class="stat-value" id="statItems">0</div><div class="stat-label">Items</div></div>

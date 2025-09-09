@@ -1,66 +1,101 @@
+// js/retailer.js
 // =======================
 // Retailer.js — Stock Catalogue
 // =======================
 
-const grid = document.getElementById("retailerGrid");
-const msgBox = document.getElementById("retailerMsg");
+document.addEventListener("DOMContentLoaded", () => {
+  const grid = document.getElementById("retailerGrid");
+  const msgBox = document.getElementById("retailerMsg");
 
-// ✅ Show messages
-function showMsg(msg, ok = true) {
-  msgBox.textContent = msg;
-  msgBox.style.color = ok ? "green" : "red";
-  setTimeout(() => (msgBox.textContent = ""), 3000);
-}
+  function showMsg(msg, ok = true) {
+    if (!msgBox) return;
+    msgBox.textContent = msg;
+    msgBox.style.color = ok ? "green" : "red";
+    setTimeout(() => (msgBox.textContent = ""), 3000);
+  }
 
-// ✅ Load clothes from backend
-async function loadClothes() {
-  try {
-    const res = await fetch("backend/get_clothes.php");
-    const data = await res.json();
-    if (data.ok) {
+  let CLOTHES_CACHE = [];
+
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, (m) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[m]));
+  }
+
+  function resolveImagePath(img) {
+    if (!img) return "images/arrival3.jpg";
+    if (img.startsWith("http") || img.startsWith("backend/uploads/") || img.startsWith("images/")) return img;
+    return `backend/uploads/${img}`;
+  }
+
+  async function loadClothes() {
+    try {
+      const res = await fetch("backend/get_clothes.php");
+      const data = await res.json();
+      if (!data.ok) {
+        showMsg("No stock available", false);
+        return;
+      }
+
+      CLOTHES_CACHE = data.clothes || [];
+      if (!grid) return;
       grid.innerHTML = "";
-      data.clothes.forEach((c) => {
+
+      CLOTHES_CACHE.forEach((c) => {
+        const imgSrc = resolveImagePath(c.image);
         const card = document.createElement("div");
         card.className = "card lift";
         card.innerHTML = `
-          <img src="${c.image || 'images/arrival3.jpg'}" alt="${c.name}" 
+          <img src="${imgSrc}" alt="${escapeHtml(c.name)}" 
                class="card-img" 
                style="width:100%;height:200px;object-fit:cover;border-radius:6px;">
-          <h3>${c.name}</h3>
-          <p class="muted">${c.brand || ""} ${c.size || ""} ${c.color || ""}</p>
-          <p><b>₹${c.price}</b> | Qty: ${c.quantity}</p>
-          <button class="btn-primary" onclick="addToCart(${c.id})">Add to Cart</button>
+          <h3>${escapeHtml(c.name)}</h3>
+          <p class="muted">${escapeHtml(c.brand || "")} ${escapeHtml(c.size || "")} ${escapeHtml(c.color || "")}</p>
+          <p><b>₹${Number(c.price).toFixed(2)}</b> | Qty: ${c.quantity}</p>
+          <button class="btn-primary add-to-cart" data-id="${c.id}">Add to Cart</button>
         `;
         grid.appendChild(card);
       });
-    } else {
-      showMsg("No stock available", false);
-    }
-  } catch (err) {
-    console.error("Error loading clothes", err);
-    showMsg("Failed to load stock", false);
-  }
-}
 
-// ✅ Add to cart
-async function addToCart(id) {
-  try {
-    const res = await fetch("backend/add_to_cart.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cloth_id: id, qty: 1 }),
-    });
-    const data = await res.json();
-    if (data.ok) {
-      showMsg("Item added to cart ✅");
-    } else {
-      showMsg(data.error || "Could not add to cart", false);
-    }
-  } catch (err) {
-    console.error("Cart error", err);
-    showMsg("Error adding to cart", false);
-  }
-}
+      document.querySelectorAll(".add-to-cart").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = Number(btn.getAttribute("data-id"));
+          addToCart(id);
+        });
+      });
 
-// ✅ Init
-document.addEventListener("DOMContentLoaded", loadClothes);
+    } catch (err) {
+      console.error("Error loading clothes", err);
+      showMsg("Failed to load stock", false);
+    }
+  }
+
+  // ✅ Add to cart with default qty = 100
+  window.addToCart = function(id) {
+    const item = CLOTHES_CACHE.find(x => Number(x.id) === Number(id));
+    if (!item) {
+      showMsg("Item not found", false);
+      return;
+    }
+
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const existing = cart.find(c => Number(c.id) === Number(item.id));
+
+    if (existing) {
+      existing.qty = Math.min((existing.qty || 100) + 100, Number(item.quantity || 99999));
+    } else {
+      cart.push({
+        id: Number(item.id),
+        name: item.name,
+        price: Number(item.price) || 0,
+        qty: 100,
+        image: resolveImagePath(item.image)
+      });
+    }
+
+    localStorage.setItem("cart", JSON.stringify(cart));
+    showMsg("Item added to cart ✅");
+  };
+
+  loadClothes();
+});

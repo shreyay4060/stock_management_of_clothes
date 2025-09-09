@@ -2,24 +2,39 @@
 require __DIR__."/db.php";
 $u = require_login();
 
-$all = isset($_GET['all']) && $_GET['all']=='1' && $u['role']==='admin';
+$stmt = $pdo->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC");
+$stmt->execute([$u['id']]);
+$orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-if ($all) {
-  $sql = "SELECT o.id,o.user_id,u.name as user_name,o.total,o.status,o.created_at
-          FROM orders o JOIN users u ON u.id=o.user_id
-          ORDER BY o.created_at DESC";
-  $res = $mysqli->query($sql);
-} else {
-  $stmt = $mysqli->prepare("SELECT id,total,status,created_at FROM orders WHERE user_id=? ORDER BY created_at DESC");
-  $stmt->bind_param("i",$u['id']); $stmt->execute(); $res = $stmt->get_result();
+$out = [];
+
+function normalizeImagePath($img) {
+    if (!$img) return "images/arrival3.jpg"; // fallback
+    if (strpos($img, "http") === 0 || strpos($img, "backend/") === 0 || strpos($img, "uploads/") === 0) {
+        return $img;
+    }
+    return "backend/uploads/" . $img;
 }
 
-$orders = [];
-while ($row = $res->fetch_assoc()) {
-  $oid = intval($row['id']);
-  $itres = $mysqli->query("SELECT oi.quantity,oi.price,c.name,c.image FROM order_items oi
-                           JOIN clothes c ON c.id=oi.cloth_id WHERE oi.order_id=".$oid);
-  $row['items'] = $itres->fetch_all(MYSQLI_ASSOC);
-  $orders[] = $row;
+foreach ($orders as $o) {
+    $stmt2 = $pdo->prepare("SELECT name, image, quantity, price FROM order_items WHERE order_id = ?");
+    $stmt2->execute([$o['id']]);
+    $items = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+
+    $out[] = [
+        "id" => $o['id'],
+        "total" => $o['total'],
+        "status" => $o['status'],
+        "created_at" => $o['created_at'],
+        "items" => array_map(function($i){
+            return [
+                "name" => $i['name'],
+                "quantity" => $i['quantity'],
+                "price" => $i['price'],
+                "image" => normalizeImagePath($i['image'])
+            ];
+        }, $items)
+    ];
 }
-json(["ok"=>true,"orders"=>$orders]);
+
+echo json_encode(["ok"=>true,"orders"=>$out]);

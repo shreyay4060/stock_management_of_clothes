@@ -1,6 +1,19 @@
 <?php
 require "db.php";
 
+// ✅ Ensure session cookie is valid across whole site
+if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',      // ✅ make session available everywhere
+        'domain' => '',     // current domain
+        'secure' => isset($_SERVER['HTTPS']), // true if HTTPS
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+    session_start();
+}
+
 // Accept JSON or form POST
 $input = file_get_contents("php://input");
 $data = json_decode($input, true);
@@ -24,7 +37,7 @@ try {
         json(["ok"=>false,"error"=>"Invalid email or password"]);
     }
 
-    // Save session
+    // ✅ Save session
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['name']    = $user['name'];
     $_SESSION['email']   = $user['email'];

@@ -13,6 +13,7 @@ $role = $_SESSION['role'] ?? null;
     <a href="retailer.php" class="<?= basename($_SERVER['PHP_SELF'])=='retailer.php'?'active':'' ?>">Retailer</a>
     <?php if ($role === "admin"): ?>
       <a href="admin.php" class="<?= basename($_SERVER['PHP_SELF'])=='admin.php'?'active':'' ?>">Admin</a>
+      <a href="admin_orders.php">Orders</a>
     <?php endif; ?>
   </nav>
 

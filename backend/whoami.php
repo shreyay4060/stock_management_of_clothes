@@ -1,9 +1,18 @@
 <?php
 require "db.php";
 
+header("Content-Type: application/json");
+
 $user = current_user();
+
 if ($user) {
-    json(["ok"=>true,"user"=>$user]);
+    echo json_encode([
+        "ok"   => true,
+        "user" => $user
+    ]);
 } else {
-    json(["ok"=>false]);
+    echo json_encode([
+        "ok"    => false,
+        "error" => "Not logged in"
+    ]);
 }

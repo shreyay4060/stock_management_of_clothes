@@ -3,6 +3,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const tbody = document.getElementById("cartTableBody");
   const totalBox = document.getElementById("cartTotal");
   const checkoutBtn = document.getElementById("checkoutBtn");
+  const addressModal = document.getElementById("addressModal");
+  const addressForm = document.getElementById("addressForm");
 
   function escapeHtml(s) {
     return String(s || "").replace(/[&<>"']/g, (m) => ({
@@ -31,13 +33,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderCart(cart) {
-    if (!tbody) return console.warn("Missing cart table body (#cartTableBody)");
     tbody.innerHTML = "";
     let total = 0;
 
     if (!cart.length) {
       tbody.innerHTML = `<tr><td colspan="6" class="muted">Your cart is empty.</td></tr>`;
-      if (totalBox) totalBox.textContent = "₹0.00";
+      totalBox.textContent = "₹0.00";
       return;
     }
 
@@ -61,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
       tbody.appendChild(tr);
     });
 
-    if (totalBox) totalBox.textContent = "₹" + total.toFixed(2);
+    totalBox.textContent = "₹" + total.toFixed(2);
   }
 
   // global handlers
@@ -83,26 +84,63 @@ document.addEventListener("DOMContentLoaded", () => {
     loadCart();
   };
 
-  // ✅ Checkout flow with address
+  // ✅ Modal handlers
+  window.closeAddressModal = function() {
+    addressModal.classList.add("hidden");
+  };
+  function openAddressModal() {
+    addressModal.classList.remove("hidden");
+  }
+
+  // ✅ Checkout flow
   async function checkout() {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
     if (!cart.length) return alert("Cart is empty!");
 
+    // open modal (instead of redirect)
+    openAddressModal();
+
+    // prefill address if exists
     try {
-      // fetch saved address
       const addrRes = await fetch("backend/get_address.php", { credentials: "include" });
       const addrData = await addrRes.json();
-
-      if (!addrData.ok || !addrData.address) {
-        alert("Please add your delivery address before checkout.");
-        window.location.href = "address.php"; // 🔑 create this page for address form
-        return;
+      if (addrData.ok && addrData.address) {
+        for (let key in addrData.address) {
+          if (addressForm.elements[key]) {
+            addressForm.elements[key].value = addrData.address[key] || "";
+          }
+        }
       }
+    } catch (e) {
+      console.warn("Could not fetch saved address", e);
+    }
+  }
 
-      const address_id = addrData.address.id;
+  if (checkoutBtn) checkoutBtn.addEventListener("click", checkout);
 
-      // send cart + address
-      const res = await fetch("backend/place_order.php", {
+  // ✅ Save address + place order
+  addressForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    if (!cart.length) return alert("Cart is empty!");
+
+    const data = Object.fromEntries(new FormData(addressForm).entries());
+
+    try {
+      // save/update address
+      const res = await fetch("backend/save_address.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include"
+      });
+      const out = await res.json();
+      if (!out.ok) return alert("Failed to save address: " + out.error);
+
+      const address_id = out.address_id;
+
+      // place order
+      const orderRes = await fetch("backend/place_order.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -111,31 +149,20 @@ document.addEventListener("DOMContentLoaded", () => {
         }),
         credentials: "include"
       });
+      const orderOut = await orderRes.json();
 
-      let data;
-      try {
-        data = await res.json();
-      } catch (e) {
-        const text = await res.text();
-        console.error("Server raw response:", text);
-        alert("Server error. Check console for details.");
-        return;
-      }
-
-      if (data.ok) {
-        alert(`Order #${data.order_id} placed! Total ₹${Number(data.total).toFixed(2)}\nPayment Method: Cash on Delivery`);
+      if (orderOut.ok) {
+        alert(`Order #${orderOut.order_id} placed successfully! Total ₹${Number(orderOut.total).toFixed(2)}\nPayment Method: Cash on Delivery`);
         localStorage.removeItem("cart");
         window.location.href = "profile.php";
       } else {
-        alert("Checkout failed: " + (data.error || "Unknown error"));
+        alert("Order failed: " + (orderOut.error || "Unknown error"));
       }
     } catch (err) {
-      console.error("Checkout error", err);
-      alert("Network error during checkout");
+      console.error("Address/order error", err);
+      alert("Network error while placing order.");
     }
-  }
-
-  if (checkoutBtn) checkoutBtn.addEventListener("click", checkout);
+  });
 
   loadCart();
 });

@@ -3,49 +3,45 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Address — Clothes Stock</title>
+  <title>Delivery Address — Clothes Stock</title>
   <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
 <?php include "header.php"; ?>
 
 <section class="page-hero">
-  <h1>Your Delivery Address</h1>
-  <p>We’ll deliver your order to this address. You can update it anytime.</p>
+  <h1>Delivery Address</h1>
+  <p>Please enter your delivery address to place the order.</p>
 </section>
 
 <section class="container">
-  <div class="card">
-    <form id="addressForm" class="form-grid">
-      <label>Full Name*
-        <input type="text" name="name" id="name" required>
-      </label>
+  <div class="card" style="max-width:500px;margin:auto;">
+    <form id="addressForm">
+      <label>Full Name</label>
+      <input type="text" name="name" required>
 
-      <label>Phone Number*
-        <input type="text" name="phone" id="phone" required>
-      </label>
+      <label>Phone Number</label>
+      <input type="text" name="phone" required>
 
-      <label>Address Line 1*
-        <input type="text" name="address_line1" id="address_line1" required>
-      </label>
+      <label>Address Line 1</label>
+      <input type="text" name="address_line1" required>
 
-      <label>Address Line 2
-        <input type="text" name="address_line2" id="address_line2">
-      </label>
+      <label>Address Line 2</label>
+      <input type="text" name="address_line2">
 
-      <label>City*
-        <input type="text" name="city" id="city" required>
-      </label>
+      <label>City</label>
+      <input type="text" name="city" required>
 
-      <label>State*
-        <input type="text" name="state" id="state" required>
-      </label>
+      <label>State</label>
+      <input type="text" name="state" required>
 
-      <label>Pincode*
-        <input type="text" name="pincode" id="pincode" required>
-      </label>
+      <label>Pincode</label>
+      <input type="text" name="pincode" required>
 
-      <button type="submit" class="btn-primary">Save Address</button>
+      <p><b>Payment Method:</b> Cash on Delivery only</p>
+
+      <button type="submit" class="btn btn-primary">Save & Place Order</button>
+      <button type="button" id="cancelBtn">Cancel</button>
     </form>
   </div>
 </section>
@@ -53,58 +49,66 @@
 <?php include "footer.php"; ?>
 
 <script>
-(async function(){
+document.getElementById("addressForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form).entries());
+
   try {
-    // ✅ Load existing address if available
-    const res = await fetch("backend/get_address.php", { credentials: "include" });
-    const data = await res.json();
-    if (data.ok && data.address) {
-      const addr = data.address;
-      document.getElementById("name").value = addr.name || "";
-      document.getElementById("phone").value = addr.phone || "";
-      document.getElementById("address_line1").value = addr.address_line1 || "";
-      document.getElementById("address_line2").value = addr.address_line2 || "";
-      document.getElementById("city").value = addr.city || "";
-      document.getElementById("state").value = addr.state || "";
-      document.getElementById("pincode").value = addr.pincode || "";
+    // ✅ Save address
+    const res = await fetch("backend/save_address.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+      credentials: "include"
+    });
+    const out = await res.json();
+
+    if (!out.ok) {
+      alert("Failed to save address: " + out.error);
+      return;
+    }
+
+    const address_id = out.address_id;
+
+    // ✅ Fetch cart from localStorage
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    if (!cart.length) {
+      alert("Cart is empty!");
+      window.location.href = "cart.php";
+      return;
+    }
+
+    // ✅ Place order immediately
+    const orderRes = await fetch("backend/place_order.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: cart.map(it => ({ id: it.id, qty: it.qty })),
+        address_id: address_id
+      }),
+      credentials: "include"
+    });
+
+    const orderOut = await orderRes.json();
+    if (orderOut.ok) {
+      alert(`Order #${orderOut.order_id} placed successfully! Total ₹${Number(orderOut.total).toFixed(2)}\nPayment Method: Cash on Delivery`);
+      localStorage.removeItem("cart");
+      window.location.href = "profile.php";
+    } else {
+      alert("Order failed: " + (orderOut.error || "Unknown error"));
     }
   } catch (err) {
-    console.error("Error loading address:", err);
+    console.error("Address/order error", err);
+    alert("Network error while placing order.");
   }
+});
 
-  // ✅ Save handler
-  document.getElementById("addressForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const body = {
-      name: document.getElementById("name").value.trim(),
-      phone: document.getElementById("phone").value.trim(),
-      address_line1: document.getElementById("address_line1").value.trim(),
-      address_line2: document.getElementById("address_line2").value.trim(),
-      city: document.getElementById("city").value.trim(),
-      state: document.getElementById("state").value.trim(),
-      pincode: document.getElementById("pincode").value.trim(),
-    };
-
-    try {
-      const res = await fetch("backend/save_address.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        credentials: "include"
-      });
-      const data = await res.json();
-      if (data.ok) {
-        alert("Address saved successfully!");
-        window.location.href = "cart.php"; // 🔑 back to cart for checkout
-      } else {
-        alert("Failed to save address: " + (data.error || "Unknown error"));
-      }
-    } catch (err) {
-      console.error("Save address error", err);
-      alert("Network error while saving address");
-    }
-  });
-})();
+// ✅ Cancel button
+document.getElementById("cancelBtn").addEventListener("click", () => {
+  window.location.href = "cart.php";
+});
 </script>
 </body>
 </html>

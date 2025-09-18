@@ -84,7 +84,7 @@ try {
         "status" => "pending"
     ]);
 } catch (Exception $e) {
-    if ($mysqli && $mysqli->errno === 0) { 
+    if ($mysqli && $mysqli->errno === 0) {
         $mysqli->rollback();
     }
     echo json_encode(["ok" => false, "error" => $e->getMessage()]);

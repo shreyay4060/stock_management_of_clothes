@@ -27,9 +27,9 @@
     .stat-label { font-size:.9rem; color:#666; }
 
     /* Carousel */
-    .carousel { position: relative; max-width: 100%; margin: 3rem auto; overflow: hidden; border-radius: 12px; }
+    .carousel { position: relative; max-width: 80%; margin: 3rem auto; overflow: hidden; border-radius: 12px; }
     .carousel-inner { display: flex; transition: transform .8s ease-in-out; }
-    .carousel img { width: 100%; flex-shrink: 0; height: 400px; object-fit: cover; }
+    .carousel img { width: 80%; flex-shrink: 0; height: 300px; object-fit: cover; }
     .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,123,255,0.6); border: none; color: #fff; font-size: 2rem; padding: .5rem 1rem; cursor: pointer; border-radius: 6px; }
     .carousel-btn.left { left: 10px; }
     .carousel-btn.right { right: 10px; }
@@ -91,14 +91,15 @@
   <section class="carousel fade-in">
     <button class="carousel-btn left" onclick="moveSlide(-1)">❮</button>
     <div class="carousel-inner" id="carouselInner">
-      <img src="images/arrival1.jpg" alt="New Fashion Stock">
+      <img src="images/arrival4.jpg" alt="New Fashion Stock">
       <img src="images/arrival2.jpg" alt="Trendy Clothes">
       <img src="images/arrival3.jpg" alt="Warehouse Inventory">
-      <img src="images/arrival4.jpg" alt="Retail Display">
+      <img src="images/arrival1.jpg" alt="Retail Display">
     </div>
     <button class="carousel-btn right" onclick="moveSlide(1)">❯</button>
   </section>
 
+   <?php include "retailer.php"; ?>
   <!-- Why Choose Us -->
   <section class="container fade-in">
     <h2 class="section-title">Why choose Clothes Stock?</h2>

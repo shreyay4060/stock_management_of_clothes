@@ -1,8 +1,4 @@
 // js/cart.js
-// =======================
-// Cart — Table Version with Checkout
-// =======================
-
 document.addEventListener("DOMContentLoaded", () => {
   const tbody = document.getElementById("cartTableBody");
   const totalBox = document.getElementById("cartTotal");
@@ -14,7 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }[m]));
   }
 
-  // ✅ Always resolve to backend/uploads
   function normalizeImagePath(imgSrc) {
     if (!imgSrc) return "images/arrival3.jpg";
     if (imgSrc.startsWith("http") || imgSrc.startsWith("images/") || imgSrc.startsWith("backend/uploads/")) {
@@ -25,14 +20,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loadCart() {
     let cart = JSON.parse(localStorage.getItem("cart") || "[]");
-
     cart = cart.map(item => ({
       ...item,
       image: normalizeImagePath(item.image),
       qty: Number(item.qty) || 1,
       price: Number(item.price) || 0
     }));
-
     localStorage.setItem("cart", JSON.stringify(cart));
     renderCart(cart);
   }
@@ -90,16 +83,32 @@ document.addEventListener("DOMContentLoaded", () => {
     loadCart();
   };
 
-  // ✅ Checkout with credentials
+  // ✅ Checkout flow with address
   async function checkout() {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
     if (!cart.length) return alert("Cart is empty!");
 
     try {
+      // fetch saved address
+      const addrRes = await fetch("backend/get_address.php", { credentials: "include" });
+      const addrData = await addrRes.json();
+
+      if (!addrData.ok || !addrData.address) {
+        alert("Please add your delivery address before checkout.");
+        window.location.href = "address.php"; // 🔑 create this page for address form
+        return;
+      }
+
+      const address_id = addrData.address.id;
+
+      // send cart + address
       const res = await fetch("backend/place_order.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: cart.map(it => ({ id: it.id, qty: it.qty })) }),
+        body: JSON.stringify({
+          items: cart.map(it => ({ id: it.id, qty: it.qty })),
+          address_id: address_id
+        }),
         credentials: "include"
       });
 
@@ -114,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (data.ok) {
-        alert(`Order #${data.order_id} placed! Total ₹${Number(data.total).toFixed(2)}`);
+        alert(`Order #${data.order_id} placed! Total ₹${Number(data.total).toFixed(2)}\nPayment Method: Cash on Delivery`);
         localStorage.removeItem("cart");
         window.location.href = "profile.php";
       } else {

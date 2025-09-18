@@ -9,9 +9,14 @@ try {
     $raw = file_get_contents("php://input");
     $body = json_decode($raw, true);
     $items = $body['items'] ?? [];
+    $address_id = intval($body['address_id'] ?? 0);
 
     if (!is_array($items) || count($items) === 0) {
         throw new Exception("No items in cart");
+    }
+
+    if ($address_id <= 0) {
+        throw new Exception("No delivery address provided");
     }
 
     $mysqli->begin_transaction();
@@ -36,9 +41,9 @@ try {
         $stmtUpd->execute();
     }
 
-    // ✅ Insert order
-    $stmtOrder = $mysqli->prepare("INSERT INTO orders(user_id,total,status) VALUES(?,?,'pending')");
-    $stmtOrder->bind_param("id", $u['id'], $total);
+    // ✅ Insert order with address_id
+    $stmtOrder = $mysqli->prepare("INSERT INTO orders(user_id,address_id,total,status) VALUES(?,?,?,'pending')");
+    $stmtOrder->bind_param("iid", $u['id'], $address_id, $total);
     $stmtOrder->execute();
     $order_id = $mysqli->insert_id;
 
@@ -79,7 +84,7 @@ try {
         "status" => "pending"
     ]);
 } catch (Exception $e) {
-    if ($mysqli->errno === 0) { // rollback only if transaction is active
+    if ($mysqli && $mysqli->errno === 0) { 
         $mysqli->rollback();
     }
     echo json_encode(["ok" => false, "error" => $e->getMessage()]);

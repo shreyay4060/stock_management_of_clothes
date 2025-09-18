@@ -62,7 +62,9 @@ function escapeHtml(s) {
           <strong>Order #${o.id}</strong> · 
           <span class="badge">${escapeHtml(o.status)}</span><br/>
           <small class="muted">${escapeHtml(o.created_at)}</small>
+
           <div class="mt-12">Total: <b>₹${Number(o.total).toFixed(2)}</b></div>
+
           <div class="mt-12">
             ${o.items.map(i=>`
               <div style="display:flex;align-items:center;gap:8px;">
@@ -73,6 +75,15 @@ function escapeHtml(s) {
               </div>
             `).join('')}
           </div>
+
+          ${o.address ? `
+            <div class="mt-12 muted" style="font-size:0.9em;">
+              <b>Delivery Address:</b><br/>
+              ${escapeHtml(o.address.name)} (${escapeHtml(o.address.phone)})<br/>
+              ${escapeHtml(o.address.address_line1)} ${escapeHtml(o.address.address_line2 || '')}<br/>
+              ${escapeHtml(o.address.city)}, ${escapeHtml(o.address.state)} - ${escapeHtml(o.address.pincode)}
+            </div>
+          ` : ""}
         </div>
       `).join('');
     }

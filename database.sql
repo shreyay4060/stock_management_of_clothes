@@ -40,3 +40,9 @@ CREATE TABLE IF NOT EXISTS order_items (
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
   FOREIGN KEY (cloth_id) REFERENCES clothes(id) ON DELETE RESTRICT
 );
+
+
+
+
+
+ALTER TABLE orders ADD COLUMN address_id INT AFTER user_id;

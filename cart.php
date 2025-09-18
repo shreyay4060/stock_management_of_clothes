@@ -28,8 +28,26 @@
   </div>
 </section>
 
+<!-- ✅ Address Modal -->
+<div id="addressModal" class="modal hidden">
+  <div class="modal-content card">
+    <h3>Delivery Address</h3>
+    <form id="addressForm">
+      <input type="text" name="name" placeholder="Full Name" required><br>
+      <input type="text" name="phone" placeholder="Phone Number" required><br>
+      <input type="text" name="address_line1" placeholder="Address Line 1" required><br>
+      <input type="text" name="address_line2" placeholder="Address Line 2"><br>
+      <input type="text" name="city" placeholder="City" required><br>
+      <input type="text" name="state" placeholder="State" required><br>
+      <input type="text" name="pincode" placeholder="Pincode" required><br>
+      <p><b>Payment Method:</b> Cash on Delivery only</p>
+      <button type="submit" class="btn-primary">Save & Place Order</button>
+      <button type="button" onclick="closeAddressModal()">Cancel</button>
+    </form>
+  </div>
+</div>
+
 <?php include "footer.php"; ?>
-<!-- <script src="js/app.js"></script> -->
 <script src="js/cart.js"></script>
 </body>
 </html>
